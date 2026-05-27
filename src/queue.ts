@@ -1,22 +1,29 @@
+import path from 'path';
+
 import { Queue, Worker, Job } from 'bullmq';
 import { globSync } from 'glob';
-import path from 'path';
 import { z } from 'zod';
 
 import type { QueueOptions, WorkerOptions, ConnectionOptions } from 'bullmq';
 
 const redisConnection = {
-  host: process.env.REDIS_HOST || 'localhost',
-  port: Number(process.env.REDIS_PORT ?? 6379)
+  host: 'localhost',
+  port: 6379
 };
 
 const queueRegistry: Record<string, Queue> = {};
+
 
 export type TridentBullMQOptions = {
   connection?: ConnectionOptions;
   queue?: Omit<QueueOptions, 'connection'>;
   worker?: Omit<WorkerOptions, 'connection'>;
 };
+
+export type TridentQueueOptions = {
+  dir?: string;
+  bullmq?: TridentBullMQOptions;
+}
 
 export interface TridentQueueMap {}
 

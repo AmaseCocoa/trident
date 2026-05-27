@@ -1,15 +1,14 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { registerTridentRoutes } from './router';
-import { registerTridentQueues, TridentBullMQOptions } from './queue';
+import { registerTridentQueues, TridentBullMQOptions, TridentQueueOptions } from './queue';
 
 export type TridentRunMode = 'all' | 'server' | 'jobs';
 
 export type TridentPluginOptions = {
   routesDir?: string;
-  queuesDir?: string;
   mode?: TridentRunMode;
-  bullmq?: TridentBullMQOptions;
+  queue?: TridentQueueOptions;
 };
 
 export const tridentPlugin: FastifyPluginAsync<TridentPluginOptions> = async (
@@ -29,8 +28,8 @@ export const tridentPlugin: FastifyPluginAsync<TridentPluginOptions> = async (
 
   if (resolvedMode === 'all' || resolvedMode === 'jobs') {
     await registerTridentQueues({
-      queuesDir: options.queuesDir,
-      bullmq: options.bullmq
+      queuesDir: options.queue?.dir,
+      bullmq: options.queue?.bullmq
     });
   }
   if (resolvedMode === 'all' || resolvedMode === 'server') {
