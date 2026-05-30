@@ -37,6 +37,12 @@ importers:
         specifier: ^8.5.1
         version: 8.5.1(tsx@4.22.3)(typescript@6.0.3)
 
+  example:
+    dependencies:
+      fastify-trident:
+        specifier: file:fastify-trident-0.2.1.tgz
+        version: file:example/fastify-trident-0.2.1.tgz
+
 packages:
 
   '@babel/generator@8.0.0-rc.6':
@@ -881,6 +887,11 @@ packages:
 
   fast-uri@3.1.2:
     resolution: {integrity: sha512-rVjf7ArG3LTk+FS6Yw81V1DLuZl1bRbNrev6Tmd/9RaroeeRRJhAt7jg/6YFxbvAQXUCavSoZhPPj6oOx+5KjQ==}
+
+  fastify-trident@file:example/fastify-trident-0.2.1.tgz:
+    resolution: {integrity: sha512-5V46G+leS+vSwG/iE3wYPqN3RLAKp7ElJTdI/jutiDCulMu/aVWp71vVAKSU8lUReZlE57kmEUAp9QlG2HII5g==, tarball: file:example/fastify-trident-0.2.1.tgz}
+    version: 0.2.1
+    engines: {node: '>=22.18.0'}
 
   fastify@5.8.5:
     resolution: {integrity: sha512-Yqptv59pQzPgQUSIm87hMqHJmdkb1+GPxdE6vW6FRyVE9G86mt7rOghitiU4JHRaTyDUk9pfeKmDeu70lAwM4Q==}
@@ -1914,6 +1925,17 @@ snapshots:
       fast-decode-uri-component: 1.0.1
 
   fast-uri@3.1.2: {}
+
+  fastify-trident@file:example/fastify-trident-0.2.1.tgz:
+    dependencies:
+      bullmq: 5.77.6
+      fastify: 5.8.5
+      glob: 13.0.6
+      ioredis: 5.11.0
+      zod: 4.4.3
+    transitivePeerDependencies:
+      - redis
+      - supports-color
 
   fastify@5.8.5:
     dependencies:

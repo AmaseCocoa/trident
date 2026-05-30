@@ -1,5 +1,5 @@
 {
   "dependencies": {
-    "fastify-trident": "file:.."
+    "fastify-trident": "^0.2.1"
   }
 }
