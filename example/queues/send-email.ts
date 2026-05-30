@@ -1,5 +1,6 @@
 import { defineJob } from 'fastify-trident';
 import { z } from 'zod';
+import type { Job } from 'bullmq';
 
 export const dataSchema = z.object({
   to: z.email(),

@@ -8,6 +8,9 @@ export type {
   EndpointSchema,
   MethodSchema,
   ContextualRequest,
+  RouteHookHandler,
+  RouteHooks,
+  EndpointHooks,
 } from "./sfe";
 export type { TridentQueueMap, TridentBullMQOptions } from "./queue";
 export type { TridentPluginOptions, TridentRunMode } from "./trident";

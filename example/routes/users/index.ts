@@ -21,6 +21,13 @@ export const schema = {
 
 export default defineEndpoint({
   schema,
+  hooks: {
+    get: {
+      preHandler: async (req, reply) => {
+        reply.header('x-users-hook', 'get');
+      }
+    }
+  },
   
   async post(req, reply) {
     const { name, email, age } = req.body;
@@ -44,9 +51,13 @@ export default defineEndpoint({
   },
   
   async get(req, reply) {
+    const scopeFlags = {
+      root: Boolean((req.server as any).tridentExampleRoot),
+      users: Boolean((req.server as any).tridentUsersScope)
+    };
     return [
-      { id: '1', name: 'Alice', email: 'alice@example.com' },
-      { id: '2', name: 'Bob', email: 'bob@example.com' }
+      { id: '1', name: 'Alice', email: 'alice@example.com', scopeFlags },
+      { id: '2', name: 'Bob', email: 'bob@example.com', scopeFlags }
     ];
   }
 });

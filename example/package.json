@@ -1,5 +1,8 @@
 {
   "dependencies": {
-    "fastify-trident": "^0.2.1"
+    "fastify-trident": "file:fastify-trident-0.2.1.tgz"
+  },
+  "scripts": {
+    "dev": "tsup"
   }
 }

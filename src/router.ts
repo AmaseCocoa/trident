@@ -1,7 +1,7 @@
-import { FastifyInstance, preHandlerHookHandler } from 'fastify';
+import { FastifyInstance, FastifyPluginAsync, preHandlerHookHandler } from 'fastify';
 import { globSync } from 'glob';
 import path from 'path';
-import { EndpointConfig, MethodSchema } from './sfe';
+import { EndpointConfig, MethodSchema, RouteHooks } from './sfe';
 
 type ValidationIssue = {
   location: 'params' | 'querystring' | 'body';
@@ -15,6 +15,14 @@ function buildUrlPath(filePath: string, routesRoot: string): string {
   urlPath = urlPath.replace(/\[(\w+)\]/g, ':$1');
   if (urlPath === '') urlPath = '/';
   return urlPath;
+}
+
+function buildUrlPrefix(dirPath: string, baseDir: string): string {
+  const relativePath = path.relative(baseDir, dirPath).replace(/\\/g, '/');
+  if (!relativePath || relativePath === '.') return '';
+  let prefix = `/${relativePath}`;
+  prefix = prefix.replace(/\[(\w+)\]/g, ':$1');
+  return prefix;
 }
 
 function isMethodSchema(value: any): value is MethodSchema {
@@ -122,69 +130,160 @@ function wrapHandler(
   };
 }
 
+type DirectoryConfig = {
+  routes: string[];
+  middleware?: preHandlerHookHandler;
+  plugin?: FastifyPluginAsync;
+  children: Set<string>;
+};
+
+function toPreHandlerHooks(hooks?: RouteHooks): preHandlerHookHandler[] {
+  if (!hooks) return [];
+  const hookValue = hooks.preHandler;
+  if (!hookValue) return [];
+  return Array.isArray(hookValue) ? hookValue : [hookValue];
+}
+
 export async function registerTridentRoutes(
   fastify: FastifyInstance,
   options?: { routesDir?: string }
 ) {
   const routesDir = options?.routesDir ?? 'src/routes';
   const routesRoot = path.resolve(routesDir);
-  const middlewarePattern = path.join(routesDir, '**/_middleware.ts').replace(/\\/g, '/');
-  const routePattern = path.join(routesDir, '**/!(_)*.ts').replace(/\\/g, '/');
+  const extensions = ['js', 'ts', 'jsx', 'tsx', 'mjs', 'cjs'];
+  const extPattern = `@(${extensions.join('|')})`;
+  
+  const targetFiles = [
+    { key: 'middleware', pattern: `**/_middleware.${extPattern}` },
+    { key: 'plugin', pattern: `**/_plugin.${extPattern}` },
+    { key: 'route', pattern: `**/!(_)*.${extPattern}` },
+  ];
+  
+  const patterns = Object.fromEntries(
+    targetFiles.map(({ key, pattern }) => [
+      `${key}Pattern`,
+      path.join(routesDir, pattern).replace(/\\/g, '/')
+    ])
+  );
+  
+  const { middlewarePattern, pluginPattern, routePattern } = patterns;
+
+
   const middlewareFiles = globSync(middlewarePattern, { nodir: true });
-  const middlewareMap = new Map<string, preHandlerHookHandler>();
+  const pluginFiles = globSync(pluginPattern, { nodir: true });
+  const routeFiles = globSync(routePattern, { nodir: true });
+
+  const directoryMap = new Map<string, DirectoryConfig>();
+  const ensureDirectory = (dirPath: string): DirectoryConfig => {
+    const resolved = path.resolve(dirPath);
+    const existing = directoryMap.get(resolved);
+    if (existing) return existing;
+    const created: DirectoryConfig = {
+      routes: [],
+      children: new Set()
+    };
+    directoryMap.set(resolved, created);
+    return created;
+  };
 
   for (const file of middlewareFiles) {
     const mod = await import(path.resolve(file));
     if (typeof mod.default === 'function') {
-      middlewareMap.set(path.resolve(path.dirname(file)), mod.default);
+      const dir = path.resolve(path.dirname(file));
+      ensureDirectory(dir).middleware = mod.default;
     }
   }
 
-  const routeFiles = globSync(routePattern, { nodir: true });
+  for (const file of pluginFiles) {
+    const mod = await import(path.resolve(file));
+    if (typeof mod.default === 'function') {
+      const dir = path.resolve(path.dirname(file));
+      ensureDirectory(dir).plugin = mod.default as FastifyPluginAsync;
+    }
+  }
 
   for (const file of routeFiles) {
-    const absolutePath = path.resolve(file);
-    const urlPath = buildUrlPath(absolutePath, routesRoot);
-    const module = await import(absolutePath);
-    const endpointConfig = module.default as EndpointConfig | undefined;
-    if (!endpointConfig) continue;
+    const dir = path.resolve(path.dirname(file));
+    ensureDirectory(dir).routes.push(path.resolve(file));
+  }
 
-    const schema = endpointConfig.schema;
+  ensureDirectory(routesRoot);
 
-    const baseHooks: preHandlerHookHandler[] = [];
-    let currentDir = path.resolve(path.dirname(file));
-    while (currentDir.startsWith(routesRoot)) {
-      const matched = middlewareMap.get(currentDir);
-      if (matched) baseHooks.unshift(matched);
-      currentDir = path.dirname(currentDir);
+  for (const dirPath of directoryMap.keys()) {
+    if (dirPath === routesRoot) continue;
+    const parentDir = path.dirname(dirPath);
+    if (parentDir.startsWith(routesRoot)) {
+      ensureDirectory(parentDir).children.add(dirPath);
     }
+  }
 
-    const methods = ['get', 'post', 'put', 'delete', 'patch'] as const;
-    for (const method of methods) {
-      const handler = endpointConfig[method];
-      if (handler) {
-        const methodHooks = [...baseHooks];
+  const registerDirectory = async (parent: FastifyInstance, dirPath: string, baseDir: string) => {
+    const config = directoryMap.get(dirPath);
+    const prefix = buildUrlPrefix(dirPath, baseDir);
 
-        let methodSchema: MethodSchema | undefined;
-        if (schema) {
-          if (isMethodSpecificSchema(schema)) {
-            methodSchema = (schema as Record<string, MethodSchema | undefined>)[method];
-          } else {
-            methodSchema = schema as MethodSchema;
+    await parent.register(
+      async (scope) => {
+        if (config?.plugin) {
+          await config.plugin(scope, {} as any);
+        }
+
+        if (config?.middleware) {
+          scope.addHook('preHandler', config.middleware);
+        }
+
+        for (const file of config?.routes ?? []) {
+          const urlPath = buildUrlPath(file, dirPath);
+          const module = await import(file);
+          const endpointConfig = module.default as EndpointConfig | undefined;
+          if (!endpointConfig) continue;
+
+          const schema = endpointConfig.schema;
+          const methods = ['get', 'post', 'put', 'delete', 'patch'] as const;
+          for (const method of methods) {
+            const handler = endpointConfig[method];
+            if (handler) {
+              const methodHooks: preHandlerHookHandler[] = [];
+
+              let methodSchema: MethodSchema | undefined;
+              if (schema) {
+                if (isMethodSpecificSchema(schema)) {
+                  methodSchema = (schema as Record<string, MethodSchema | undefined>)[method];
+                } else {
+                  methodSchema = schema as MethodSchema;
+                }
+              }
+
+              if (
+                methodSchema &&
+                (methodSchema.params || methodSchema.querystring || methodSchema.body)
+              ) {
+                methodHooks.push(createValidationPreHandler(methodSchema));
+              }
+
+              const endpointHooks = endpointConfig.hooks?.[method];
+              const endpointPreHandlers = toPreHandlerHooks(endpointHooks);
+              if (endpointPreHandlers.length > 0) {
+                methodHooks.push(...endpointPreHandlers);
+              }
+
+              scope.route({
+                method: method.toUpperCase() as any,
+                url: urlPath,
+                preHandler: methodHooks,
+                handler: wrapHandler(handler, methodSchema)
+              });
+            }
           }
         }
 
-        if (methodSchema && (methodSchema.params || methodSchema.querystring || methodSchema.body)) {
-          methodHooks.push(createValidationPreHandler(methodSchema));
+        const children = Array.from(config?.children ?? []).sort();
+        for (const childDir of children) {
+          await registerDirectory(scope, childDir, dirPath);
         }
+      },
+      prefix ? { prefix } : { }
+    );
+  };
 
-        fastify.route({
-          method: method.toUpperCase() as any,
-          url: urlPath,
-          preHandler: methodHooks,
-          handler: wrapHandler(handler, methodSchema)
-        });
-      }
-    }
-  }
+  await registerDirectory(fastify, routesRoot, routesRoot);
 }

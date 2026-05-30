@@ -28,6 +28,12 @@ type MethodHandler<TSchema extends MethodSchema = MethodSchema> = (
   res: FastifyReply
 ) => Promise<unknown> | unknown;
 
+export type RouteHookHandler = (...args: any[]) => any;
+export type RouteHooks = Record<string, RouteHookHandler | RouteHookHandler[]>;
+export type EndpointHooks = Partial<
+  Record<'get' | 'post' | 'put' | 'delete' | 'patch', RouteHooks>
+>;
+
 type ExtractMethodSchema<T extends EndpointSchema, M extends string> = T extends Record<
   string,
   MethodSchema | undefined
@@ -43,6 +49,7 @@ type ExtractMethodSchema<T extends EndpointSchema, M extends string> = T extends
 
 export interface EndpointConfig<TSchema extends EndpointSchema = EndpointSchema> {
   schema?: TSchema;
+  hooks?: EndpointHooks;
   get?: MethodHandler<ExtractMethodSchema<TSchema, 'get'>>;
   post?: MethodHandler<ExtractMethodSchema<TSchema, 'post'>>;
   put?: MethodHandler<ExtractMethodSchema<TSchema, 'put'>>;

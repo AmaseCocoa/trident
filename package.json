@@ -34,7 +34,7 @@
   },
   "scripts": {
     "build": "tsdown",
-    "prepublishOnly": "npm run publint && npm run build",
+    "prepublishOnly": "pnpm run publint && pnpm run build",
     "publint": "tsdown --publint"
   },
   "keywords": [],
@@ -52,6 +52,7 @@
     "@types/node": "^25.9.1",
     "publint": "^0.3.21",
     "tsdown": "^0.22.1",
-    "tsup": "^8.5.1"
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3"
   }
 }
