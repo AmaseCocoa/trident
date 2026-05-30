@@ -92,16 +92,25 @@ import { defineEndpoint, useFastify } from 'fastify-trident';
 const app = useFastify();
 
 export default defineEndpoint({
-  hooks: {
-    get: {
-      preHandler: async (req, reply) => {
-        reply.header('x-hooked', 'true');
-      }
-    }
-  },
   async get(req, reply) {
     const fastify = useFastify();
     return { ok: fastify.isOk }
+  }
+});
+```
+
+You can call with customized FastifyInstance type.
+
+```ts
+import { defineEndpoint, useFastify } from 'fastify-trident';
+import { CustomizedFastifyInstance } from './types.ts';
+
+const app = useFastify();
+
+export default defineEndpoint({
+  async get(req, reply) {
+    const fastify = useFastify<CustomizedFastifyInstance>();
+    return { customized: fastify.isCustomized }
   }
 });
 ```
