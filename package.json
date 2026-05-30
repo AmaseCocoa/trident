@@ -1,10 +1,21 @@
 {
   "name": "fastify-trident",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "one-file, one-endpoint.",
   "type": "module",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/AmaseCocoa/trident"
@@ -12,15 +23,9 @@
   "bugs": {
     "url": "https://github.com/AmaseCocoa/trident/issues"
   },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    }
-  },
   "scripts": {
-    "dev": "tsup src/index.ts --format esm --dts --watch",
-    "build": "tsup src/index.ts --format esm --dts --clean"
+    "build": "tsdown",
+    "prepublishOnly": "pnpm run build"
   },
   "keywords": [],
   "author": "",
@@ -35,6 +40,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.9.1",
+    "tsdown": "^0.22.1",
     "tsup": "^8.5.1"
   }
 }

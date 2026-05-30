@@ -1,5 +1,5 @@
 import Fastify from 'fastify';
-import trident from '../src';
+import trident from 'fastify-trident';
 
 const app = Fastify({ logger: true });
 
