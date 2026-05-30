@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { registerTridentRoutes } from './router';
-import { registerTridentQueues, TridentBullMQOptions, TridentQueueOptions } from './queue';
+import { registerTridentQueues, TridentQueueOptions } from './queue';
 
 export type TridentRunMode = 'all' | 'server' | 'jobs';
 
