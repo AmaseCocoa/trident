@@ -7,10 +7,11 @@ export function runWithFastify<T>(instance: FastifyInstance, fn: () => T): T {
   return fastifyStorage.run(instance, fn);
 }
 
-export function useFastify(): FastifyInstance {
+export function useFastify<T extends FastifyInstance = FastifyInstance>(): T {
   const instance = fastifyStorage.getStore();
   if (!instance) {
     throw new Error('Trident Fastify instance is only available inside endpoint methods.');
   }
-  return instance;
+
+  return instance as T;
 }
