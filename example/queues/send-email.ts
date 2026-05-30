@@ -2,13 +2,13 @@ import { defineJob } from 'fastify-trident';
 import { z } from 'zod';
 
 export const dataSchema = z.object({
-  to: z.string().email(),
+  to: z.email(),
   name: z.string(),
   subject: z.string().min(1),
   body: z.string().min(1)
 });
 
-declare module 'fastify-trident/queue' {
+declare module 'fastify-trident' {
   interface TridentQueueMap {
     'send-email': {
       data: z.infer<typeof dataSchema>;
