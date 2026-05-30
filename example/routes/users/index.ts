@@ -1,4 +1,4 @@
-import { defineEndpoint, useQueue } from 'fastify-trident';
+import { defineEndpoint, useFastify, useQueue } from 'fastify-trident';
 import { z } from 'zod';
 
 export const schema = {
@@ -51,9 +51,11 @@ export default defineEndpoint({
   },
   
   async get(req, reply) {
+    const app = useFastify();
     const scopeFlags = {
       root: Boolean((req.server as any).tridentExampleRoot),
-      users: Boolean((req.server as any).tridentUsersScope)
+      users: Boolean((req.server as any).tridentUsersScope),
+      fromUseFastify: Boolean((app as any).tridentUsersScope)
     };
     return [
       { id: '1', name: 'Alice', email: 'alice@example.com', scopeFlags },

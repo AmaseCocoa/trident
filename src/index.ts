@@ -1,5 +1,6 @@
 export { defineEndpoint } from "./sfe";
 export { defineJob, useQueue } from "./queue";
+export { useFastify } from "./fastify";
 export { tridentPlugin } from "./trident";
 export { tridentPlugin as default } from "./trident";
 

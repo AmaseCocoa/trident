@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyPluginAsync, preHandlerHookHandler } from 'fast
 import { globSync } from 'glob';
 import path from 'path';
 import { EndpointConfig, MethodSchema, RouteHooks } from './sfe';
+import { runWithFastify } from './fastify';
 
 type ValidationIssue = {
   location: 'params' | 'querystring' | 'body';
@@ -102,7 +103,7 @@ function wrapHandler(
   schema?: MethodSchema
 ) {
   return async (request: any, reply: any) => {
-    const result = await handler(request, reply);
+    const result = await runWithFastify(request.server, () => handler(request, reply));
     if (reply.sent) return result;
 
     const responseSchemas = schema?.response;

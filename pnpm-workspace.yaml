@@ -1,3 +1,5 @@
 allowBuilds:
   esbuild: true
   msgpackr-extract: true
+minimumReleaseAgeExclude:
+  - fastify-trident@0.3.0

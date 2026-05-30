@@ -82,6 +82,30 @@ export default defineEndpoint({
 
 Only `preHandler` is applied at the route level. Other hook names are accepted by type but are not wired yet.
 
+## Access the Fastify Instance
+
+If you use `fastify.decorate`, you can read the instance inside endpoint methods via `useFastify()`.
+
+```ts
+import { defineEndpoint, useFastify } from 'fastify-trident';
+
+const app = useFastify();
+
+export default defineEndpoint({
+  hooks: {
+    get: {
+      preHandler: async (req, reply) => {
+        reply.header('x-hooked', 'true');
+      }
+    }
+  },
+  async get(req, reply) {
+    const fastify = useFastify();
+    return { ok: fastify.isOk }
+  }
+});
+```
+
 ## Scoped Plugins and Middleware
 
 Place `_plugin.ts` or `_middleware.ts` in a directory to apply to that subtree.
