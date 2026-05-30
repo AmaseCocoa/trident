@@ -34,13 +34,13 @@
   },
   "scripts": {
     "build": "tsdown",
-    "prepublishOnly": "pnpm run publint && pnpm run build",
+    "prepublishOnly": "npm run publint && npm run build",
     "publint": "tsdown --publint"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@11.5.0",
   "dependencies": {
     "bullmq": "^5.77.6",
     "fastify": "^5.8.5",
